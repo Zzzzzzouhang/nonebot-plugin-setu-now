@@ -16,7 +16,16 @@ async def download_pic(url: str, proxies: Optional[str] = None) -> Optional[byte
         re = await client.get(url=url, headers=headers, timeout=60)
         if re.status_code == 200:
             logger.debug("成功获取图片")
-            return re.content
+            # bytes 转 numpy
+            img_buffer_numpy = np.frombuffer(re.content, dtype=np.uint8)                
+            # 将 图片字节码bytes  转换成一维的numpy数组 到缓存中
+            img_numpy = cv2.imdecode(img_buffer_numpy, 1)   
+            # 从指定的内存缓存中读取一维numpy数据，并把数据转换(解码)成图像矩阵格式
+            dst= cv2.resize(img_numpy, None,fx=0.99,fy=0.99, interpolation=cv2.INTER_CUBIC)
+            # numpy 转 bytes
+            _, img_encode = cv2.imencode('.jpg', dst)
+            img_bytes = img_encode.tobytes()                 
+            return img_bytes
         else:
             logger.error(f"获取图片失败: {re.status_code}")
             return
